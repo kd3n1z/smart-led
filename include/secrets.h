@@ -1,0 +1,7 @@
+#ifndef SMART_LED_SECRETS
+#define SMART_LED_SECRETS
+
+#define WIFI_SSID "SSID"
+#define WIFI_PASSWORD "PASSWORD"
+
+#endif

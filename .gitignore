@@ -1,0 +1,6 @@
+.pio
+.pioenvs
+.piolibdeps
+
+.ccls-cache
+compile_commands.json
