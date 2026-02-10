@@ -1,5 +1,7 @@
 #include "config.h"
+#include "controls.h"
 #include "secrets.h"
+#include "settings.h"
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>
 
@@ -46,14 +48,17 @@ void updateServer() {
 enum Cmd : uint8_t {
     CMD_GET_COLOR = 0,
     CMD_GET_BRIGHTNESS = 1,
+    CMD_GET_IS_ON = 2,
 
-    CMD_SET_COLOR = 2,
-    CMD_SET_BRIGHTNESS = 3
+    CMD_SET_COLOR = 255,
+    CMD_SET_BRIGHTNESS = 254
 };
 
 #define REQUIRE_ARGS(name, count)                                              \
-    if (i + count >= len)                                                      \
-        return;                                                                \
+    if (i + count >= len) {                                                    \
+        statusCode = 3;                                                        \
+        goto end;                                                              \
+    }                                                                          \
     uint8_t name[count];                                                       \
     for (int k = 0; k < count; k++)                                            \
         name[k] = data[++i];
@@ -61,50 +66,73 @@ enum Cmd : uint8_t {
 void handleApiRequest() {
     WiFiClient client = server.client();
 
-    if (!server.hasArg("plain")) {
-        server.send(400, "text/plain", "no data provided");
-        return;
-    }
-
     server.sendHeader("Access-Control-Allow-Origin", "*", true);
     server.setContentLength(CONTENT_LENGTH_UNKNOWN);
     server.send(200, "application/octet-stream", "");
 
-    String data = server.arg("plain");
-    int len = data.length();
+    // 0 - ok
+    // 1 - no data provided
+    // 2 - unknown command
+    // 3 - not enough args
+    uint8_t statusCode = 0;
+
+    String data;
+    int len;
+
+    if (!server.hasArg("plain")) {
+        statusCode = 1;
+        goto end;
+    }
+
+    data = server.arg("plain");
+    len = data.length();
 
     for (int i = 0; i < len; i++) {
         uint8_t cmd = data[i];
 
         switch (cmd) {
         case CMD_GET_COLOR: {
-            uint8_t resp[] = {255, 0, 123};
+            uint8_t resp[] = {settings.solidRed, settings.solidGreen,
+                              settings.solidBlue};
             server.sendContent((const char *)resp, 3);
             break;
         }
         case CMD_GET_BRIGHTNESS: {
-            uint8_t resp[] = {99};
+            uint8_t resp[] = {settings.brightness};
+            server.sendContent((const char *)resp, 1);
+            break;
+        }
+        case CMD_GET_IS_ON: {
+            uint8_t resp[] = {isOn ? (uint8_t)1 : (uint8_t)0};
             server.sendContent((const char *)resp, 1);
             break;
         }
         case CMD_SET_COLOR: {
             REQUIRE_ARGS(rgb, 3);
-            Serial.print("rgb: ");
-            Serial.print(rgb[0]);
-            Serial.print(", ");
-            Serial.print(rgb[1]);
-            Serial.print(", ");
-            Serial.println(rgb[2]);
+            if (settings.solidRed != rgb[0] || settings.solidRed != rgb[1] ||
+                settings.solidBlue != rgb[2]) {
+                settings.solidRed = rgb[0];
+                settings.solidGreen = rgb[1];
+                settings.solidBlue = rgb[2];
+                markSettingsDirty();
+            }
             break;
         }
         case CMD_SET_BRIGHTNESS: {
             REQUIRE_ARGS(brightness, 1);
-            Serial.print("brightness: ");
-            Serial.println(brightness[0]);
+            if (settings.brightness != brightness[0]) {
+                settings.brightness = brightness[0];
+                markSettingsDirty();
+            }
             break;
         }
         default:
-            return;
+            statusCode = 2;
+            goto end;
         }
     }
+
+end:
+    uint8_t footer[] = {statusCode};
+    server.sendContent((const char *)footer, 1);
 }

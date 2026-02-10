@@ -3,8 +3,8 @@
 
 // Hardware
 #define NUM_LEDS 119
-#define SWITCH_PIN D3
-#define DATA_PIN 4
+#define SWITCH_PIN D2
+#define DATA_PIN D1
 
 // Wi-Fi
 #define WIFI_IP 192, 168, 0, 123
@@ -13,8 +13,8 @@
 
 // Other
 #define HTTP_SERVER_PORT 80
-#define EEPROM_DEBOUNCE_TIME 2000
-#define SWITCH_DEBOUNCE_TIME 200
-#define FADE_DURATION 1000
+#define EEPROM_DEBOUNCE_TIME 10000
+#define SWITCH_DEBOUNCE_TIME 100
+#define FADE_DURATION 500
 
 #endif
