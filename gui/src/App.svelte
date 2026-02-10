@@ -89,11 +89,12 @@
     });
 </script>
 
-{#snippet colorButton(color: string)}
+{#snippet colorButton(color: string, additional: boolean = false)}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
         class="color-button"
+        class:additional
         style="--color: {color};"
         onclick={() => setColor(color)}
     ></div>
@@ -106,6 +107,12 @@
             border: 2px solid #00000080;
             border-radius: 8px;
             cursor: pointer;
+
+            &.additional {
+                @media screen and (max-width: 450px) {
+                    display: none;
+                }
+            }
         }
     </style>
 {/snippet}
@@ -143,6 +150,7 @@
                     {color.toUpperCase()}
                 </span>
                 <div>
+                    {@render colorButton("#bfd9ff", true)}
                     {@render colorButton("#dcebff")}
                     {@render colorButton("#ffffff")}
                     {@render colorButton("#ffd9b3")}
