@@ -37,7 +37,7 @@
         }
 
         > .bg {
-            inset: 2px 0 2px 0;
+            inset: 4px 0;
             border-radius: 10000px;
             overflow: hidden;
 
