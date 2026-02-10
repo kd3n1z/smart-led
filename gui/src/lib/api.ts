@@ -28,7 +28,10 @@ export async function performRequest(...commands: (ApiCommand)[]) {
 
     console.log("Requesting [" + requestData + "]");
 
-    const response = await fetch('/api', { method: 'POST', body: new Uint8Array(requestData) });
+    const response = await fetch(import.meta.env.DEV ? 'http://192.168.0.123/api' : '/api', {
+        method: 'POST',
+        body: new Uint8Array(requestData)
+    });
     const responseData = new Uint8Array(await response.arrayBuffer());
 
     console.log("Got response: [" + responseData.toString() + "]");
