@@ -1,5 +1,6 @@
 #include "config.h"
 #include "controls.h"
+#include "frontend.h"
 #include "secrets.h"
 #include "settings.h"
 #include <ESP8266WebServer.h>
@@ -17,6 +18,8 @@ void setupServer() {
     Serial.print("Initializing server & Wi-Fi... ");
 
     server.on("/api", handleApiRequest);
+
+    setupFrontend();
 
     WiFi.mode(WIFI_STA);
     WiFi.config(local_ip, gateway, subnet);

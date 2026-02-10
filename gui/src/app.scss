@@ -1,0 +1,53 @@
+:root {
+  --bg-1: #161616;
+  --bg-2: #262626;
+  --text: #fff;
+
+  --button-on: #00c950;
+  --button-off: #404040;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  min-height: 100svh;
+}
+
+html {
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+body {
+  background: var(--bg-1);
+
+  color: var(--text);
+  font-family: sans-serif;
+  font-size: 14px;
+
+  margin: 0;
+  padding: 32px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dimmed {
+  opacity: 0.5;
+}
+
+a {
+  all: unset;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+
+  opacity: 1;
+  &:active {
+    opacity: 0.7;
+  }
+}
