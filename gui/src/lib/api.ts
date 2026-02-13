@@ -15,7 +15,7 @@ export interface ApiCommandWithResult<T> extends ApiCommand {
     result: () => T;
 }
 
-export async function performRequest(...commands: (ApiCommand)[]) {
+export async function performRequest(commands: ApiCommand[], signal: AbortSignal | null = null) {
     const requestData: number[] = [];
 
     const writer: ApiRequestWriter = {
@@ -30,7 +30,8 @@ export async function performRequest(...commands: (ApiCommand)[]) {
 
     const response = await fetch(import.meta.env.DEV ? 'http://192.168.0.123/api' : '/api', {
         method: 'POST',
-        body: new Uint8Array(requestData)
+        body: new Uint8Array(requestData),
+        signal
     });
     const responseData = new Uint8Array(await response.arrayBuffer());
 

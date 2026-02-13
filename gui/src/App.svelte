@@ -10,6 +10,7 @@
     } from "./lib/api";
     import { Lightbulb, Power } from "lucide-svelte";
     import Slider from "./components/Slider.svelte";
+    import { sleep } from "./lib/util";
 
     function createDebounce<T extends (...args: any[]) => any>(
         interval: number,
@@ -41,11 +42,11 @@
         let g = parseInt(hex.substring(2, 4), 16);
         let b = parseInt(hex.substring(4, 6), 16);
 
-        await performRequest(new SetColorCommand(r, g, b));
+        await performRequest([new SetColorCommand(r, g, b)]);
     });
 
     const setRemoteBrightness = createDebounce(10, async (value: number) => {
-        await performRequest(new SetBrightnessCommand(value));
+        await performRequest([new SetBrightnessCommand(value)]);
     });
 
     function setColor(hex: string) {
@@ -56,36 +57,53 @@
     let color = $state<string>("#000000");
     let brightness = $state<number>(0);
 
-    let isOn = $state(false);
+    let status = $state<"on" | "off" | "disconnected">("disconnected");
 
-    async function poller() {
-        const getIsOnCmd = new GetIsOnCommand();
+    async function poller(signal: AbortSignal) {
+        let syncNeeded = true;
 
-        try {
-            await performRequest(getIsOnCmd);
-            isOn = getIsOnCmd.result();
-        } catch (e) {
-            console.log(e);
-        }
-
-        setTimeout(poller, 2000);
-    }
-
-    onMount(async () => {
         const getColorCmd = new GetColorCommand();
         const getBrightnessCmd = new GetBrightnessCommand();
         const getIsOnCmd = new GetIsOnCommand();
 
-        try {
-            await performRequest(getColorCmd, getBrightnessCmd, getIsOnCmd);
-            color = getColorCmd.result();
-            brightness = getBrightnessCmd.result();
-            isOn = getIsOnCmd.result();
-        } catch (e) {
-            console.error(e);
-        }
+        while (signal) {
+            if (signal.aborted) {
+                break;
+            }
 
-        poller();
+            try {
+                await performRequest(
+                    syncNeeded
+                        ? [getColorCmd, getBrightnessCmd, getIsOnCmd]
+                        : [getIsOnCmd],
+                    AbortSignal.any([AbortSignal.timeout(5000), signal]),
+                );
+
+                if (syncNeeded) {
+                    color = getColorCmd.result();
+                    brightness = getBrightnessCmd.result();
+                    syncNeeded = false;
+                }
+
+                status = getIsOnCmd.result() ? "on" : "off";
+            } catch (e) {
+                console.log(e);
+                status = "disconnected";
+                syncNeeded = true;
+            }
+
+            await sleep(2000);
+        }
+    }
+
+    onMount(() => {
+        const pollerAbortController = new AbortController();
+
+        poller(pollerAbortController.signal);
+
+        return () => {
+            pollerAbortController.abort();
+        };
     });
 </script>
 
@@ -123,16 +141,16 @@
         <div class="data">
             <span class="dimmed"> Status </span>
             <span class="status">
-                {isOn ? "On" : "Off"}
+                {status}
             </span>
         </div>
-        <div class="button" class:on={isOn}>
+        <div class="button {status}">
             <Power />
         </div>
     </div>
     <div
         class="preview"
-        class:on={isOn}
+        class:on={status === "on"}
         style="--color: {color}; --brightness: {brightness / 255};"
     >
         <Lightbulb size="100px" />
@@ -147,7 +165,7 @@
             />
             <div>
                 <span>
-                    {color.toUpperCase()}
+                    {color}
                 </span>
                 <div>
                     {@render colorButton("#bfd9ff", true)}
@@ -217,6 +235,7 @@
                 > .status {
                     font-weight: 600;
                     font-size: 18px;
+                    text-transform: capitalize;
                 }
             }
 
@@ -275,6 +294,8 @@
         > .color > .colors {
             display: flex;
             gap: 16px;
+
+            text-transform: uppercase;
 
             > input {
                 $input-size: 58px;
