@@ -72,6 +72,7 @@ enum CommandIds {
 
     SetColor = 255,
     SetBrightness = 254,
+    SetIsOn = 253,
 }
 
 export class GetColorCommand implements ApiCommandWithResult<string> {
@@ -165,5 +166,17 @@ export class SetBrightnessCommand implements ApiCommand {
 
     encode(writer: ApiRequestWriter) {
         writer.write(CommandIds.SetBrightness, this.brightness);
+    }
+}
+
+export class SetIsOnCommand implements ApiCommand {
+    isOn: boolean;
+
+    constructor(isOn: boolean) {
+        this.isOn = isOn;
+    }
+
+    encode(writer: ApiRequestWriter) {
+        writer.write(CommandIds.SetIsOn, this.isOn ? 1 : 0);
     }
 }

@@ -7,6 +7,7 @@
         performRequest,
         SetBrightnessCommand,
         SetColorCommand,
+        SetIsOnCommand,
     } from "./lib/api";
     import { Lightbulb, Power } from "lucide-svelte";
     import Slider from "./components/Slider.svelte";
@@ -59,6 +60,10 @@
 
     let status = $state<"on" | "off" | "disconnected">("disconnected");
 
+    function updateStatus(value: boolean) {
+        status = value ? "on" : "off";
+    }
+
     async function poller(signal: AbortSignal) {
         let syncNeeded = true;
 
@@ -85,7 +90,7 @@
                     syncNeeded = false;
                 }
 
-                status = getIsOnCmd.result() ? "on" : "off";
+                updateStatus(getIsOnCmd.result());
             } catch (e) {
                 console.log(e);
                 status = "disconnected";
@@ -105,6 +110,18 @@
             pollerAbortController.abort();
         };
     });
+
+    async function toggleIsOn() {
+        if (status === "disconnected") {
+            return;
+        }
+
+        const nextStatus = status === "off";
+
+        updateStatus(nextStatus);
+        await performRequest([new SetIsOnCommand(nextStatus)]);
+        updateStatus(nextStatus); // update again due to possible poller race
+    }
 </script>
 
 {#snippet colorButton(color: string, additional: boolean = false)}
@@ -144,7 +161,9 @@
                 {status}
             </span>
         </div>
-        <div class="button {status}">
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <div class="button {status}" onclick={toggleIsOn}>
             <Power />
         </div>
     </div>
@@ -253,6 +272,10 @@
 
                 &.on {
                     background: var(--button-on);
+                }
+
+                &:active {
+                    opacity: 0.7;
                 }
             }
         }

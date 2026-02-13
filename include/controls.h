@@ -5,8 +5,5 @@
 
 void setupControls();
 void updateControls();
-uint8_t getPhysicalBrightness();
-
-extern bool isOn;
 
 #endif

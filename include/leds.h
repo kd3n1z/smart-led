@@ -3,5 +3,7 @@
 
 void setupLeds();
 void updateLeds();
+void setIsOn(bool value);
+bool getIsOn();
 
 #endif

@@ -1,6 +1,7 @@
 #include "config.h"
 #include "controls.h"
 #include "frontend.h"
+#include "leds.h"
 #include "secrets.h"
 #include "settings.h"
 #include <ESP8266WebServer.h>
@@ -54,7 +55,8 @@ enum Cmd : uint8_t {
     CMD_GET_IS_ON = 2,
 
     CMD_SET_COLOR = 255,
-    CMD_SET_BRIGHTNESS = 254
+    CMD_SET_BRIGHTNESS = 254,
+    CMD_SET_IS_ON = 253
 };
 
 #define REQUIRE_ARGS(name, count)                                              \
@@ -106,29 +108,33 @@ void handleApiRequest() {
             break;
         }
         case CMD_GET_IS_ON: {
-            uint8_t resp[] = {isOn ? (uint8_t)1 : (uint8_t)0};
+            uint8_t resp[] = {getIsOn()};
             server.sendContent((const char *)resp, 1);
             break;
         }
         case CMD_SET_COLOR: {
-            REQUIRE_ARGS(rgb, 3);
-            if (settings.solidRed != rgb[0] || settings.solidRed != rgb[1] ||
-                settings.solidBlue != rgb[2]) {
-                settings.solidRed = rgb[0];
-                settings.solidGreen = rgb[1];
-                settings.solidBlue = rgb[2];
+            REQUIRE_ARGS(args, 3);
+            if (settings.solidRed != args[0] || settings.solidRed != args[1] ||
+                settings.solidBlue != args[2]) {
+                settings.solidRed = args[0];
+                settings.solidGreen = args[1];
+                settings.solidBlue = args[2];
                 markSettingsDirty();
             }
             break;
         }
         case CMD_SET_BRIGHTNESS: {
-            REQUIRE_ARGS(brightness, 1);
-            if (settings.brightness != brightness[0]) {
-                settings.brightness = brightness[0];
+            REQUIRE_ARGS(args, 1);
+            if (settings.brightness != args[0]) {
+                settings.brightness = args[0];
                 markSettingsDirty();
             }
             break;
         }
+        case CMD_SET_IS_ON:
+            REQUIRE_ARGS(args, 1);
+            setIsOn(args[0]);
+            break;
         default:
             statusCode = 2;
             goto end;
