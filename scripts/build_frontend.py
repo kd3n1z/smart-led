@@ -118,4 +118,4 @@ def build_frontend(source, target, env):
 
     print(f"[frontend] generated {OUTPUT_PATH}")
 
-env.AddPreAction("upload", build_frontend)
+env.AddPreAction("$BUILD_DIR/${PROGNAME}.elf", build_frontend)
