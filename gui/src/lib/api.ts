@@ -1,3 +1,5 @@
+import { sleep } from "./util";
+
 interface ApiRequestWriter {
     write: (...data: number[]) => void;
 }
@@ -15,7 +17,7 @@ export interface ApiCommandWithResult<T> extends ApiCommand {
     result: () => T;
 }
 
-export async function performRequest(commands: ApiCommand[], signal: AbortSignal | null = null) {
+export async function performRequest(commands: ApiCommand[], signal: AbortSignal | null = null, attempts: number = 1) {
     const requestData: number[] = [];
 
     const writer: ApiRequestWriter = {
@@ -26,14 +28,32 @@ export async function performRequest(commands: ApiCommand[], signal: AbortSignal
         command.encode(writer);
     }
 
-    console.log("Requesting [" + requestData + "]");
+    let response: Response;
 
-    const response = await fetch(import.meta.env.DEV ? 'http://192.168.0.123/api' : '/api', {
-        method: 'POST',
-        body: new Uint8Array(requestData),
-        signal
-    });
-    const responseData = new Uint8Array(await response.arrayBuffer());
+    for (let i = 1; i <= attempts; i++) {
+        console.log("Requesting [" + requestData + "], attempt " + i + "/" + attempts);
+
+        const timeout = AbortSignal.timeout(5000);
+
+        try {
+            response = await fetch(import.meta.env.DEV ? 'http://192.168.0.123/api' : '/api', {
+                method: 'POST',
+                body: new Uint8Array(requestData),
+                signal: signal ? AbortSignal.any([timeout, signal]) : timeout
+            });
+
+            break;
+        } catch (e) {
+            if (i == attempts) {
+                throw e;
+            }
+
+            console.warn("Attempt failed", e);
+            await sleep(100);
+        }
+    }
+
+    const responseData = new Uint8Array(await response!.arrayBuffer());
 
     console.log("Got response: [" + responseData.toString() + "]");
 

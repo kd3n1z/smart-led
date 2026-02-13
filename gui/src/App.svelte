@@ -81,7 +81,8 @@
                     syncNeeded
                         ? [getColorCmd, getBrightnessCmd, getIsOnCmd]
                         : [getIsOnCmd],
-                    AbortSignal.any([AbortSignal.timeout(5000), signal]),
+                    signal,
+                    2,
                 );
 
                 if (syncNeeded) {
