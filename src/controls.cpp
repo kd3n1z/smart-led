@@ -15,13 +15,20 @@ void setupControls() {
 
 void updateControls() {
     bool currentReading = readSwitch();
+    unsigned long currentMillis = millis();
 
-    static unsigned long stateChangeTime = millis();
-    static bool lastReading = currentReading;
+    static bool stableReading = currentReading;
+    static bool previousReading = currentReading;
+    static unsigned long stateChangeTime = currentMillis;
 
-    if (currentReading != lastReading &&
-        millis() - stateChangeTime >= SWITCH_DEBOUNCE_TIME) {
-        lastReading = currentReading;
-        setIsOn(currentReading);
+    if (currentReading != previousReading) {
+        previousReading = currentReading;
+        stateChangeTime = currentMillis;
+    }
+
+    if (stableReading != currentReading &&
+        currentMillis - stateChangeTime >= SWITCH_DEBOUNCE_TIME) {
+        stableReading = currentReading;
+        setIsOn(stableReading);
     }
 }
