@@ -1,7 +1,7 @@
 Import("env")
 
-import os
 import gzip
+import os
 import subprocess
 import sys
 
@@ -22,17 +22,21 @@ MIME_TYPES = {
     ".woff2": "font/woff2",
 }
 
+
 def file_to_gzip_bytes(path):
     with open(path, "rb") as f:
         return gzip.compress(f.read())
+
 
 def sanitize_name(path):
     name = path.replace("\\", "_").replace("/", "_").replace(".", "_")
     return "".join(c if c.isalnum() or c == "_" else "_" for c in name)
 
+
 def get_mime_type(filename):
     _, ext = os.path.splitext(filename)
     return MIME_TYPES.get(ext.lower(), "application/octet-stream")
+
 
 def run_pnpm_build():
     if not os.path.isdir(GUI_FOLDER):
@@ -55,7 +59,8 @@ def run_pnpm_build():
         print("[frontend] ERROR: pnpm build failed")
         env.Exit(e.returncode)
 
-def build_frontend(source, target, env):
+
+def build_frontend():
     run_pnpm_build()
 
     if not os.path.isdir(DIST_FOLDER):
@@ -68,19 +73,21 @@ def build_frontend(source, target, env):
         "#include <ESP8266WebServer.h>",
         "",
         "extern ESP8266WebServer server;",
-        ""
+        "",
     ]
 
     route_lines = ["void setupFrontend() {"]
 
     def append_route(rel_path, mime, var_name):
-        route_lines.extend([
-            f'    server.on("/{rel_path}", []() {{',
-            f'        server.sendHeader("Content-Encoding", "gzip");',
-            f'        server.sendHeader("Cache-Control", "max-age=86400");',
-            f'        server.send(200, "{mime}", {var_name}, {var_name}_len);',
-            f'    }});'
-        ])
+        route_lines.extend(
+            [
+                f'    server.on("/{rel_path}", []() {{',
+                f'        server.sendHeader("Content-Encoding", "gzip");',
+                f'        server.sendHeader("Cache-Control", "max-age=86400");',
+                f'        server.send(200, "{mime}", {var_name}, {var_name}_len);',
+                f"    }});",
+            ]
+        )
 
     for root, _, files in os.walk(DIST_FOLDER):
         for file in files:
@@ -92,7 +99,7 @@ def build_frontend(source, target, env):
 
             array_lines = []
             for i in range(0, len(compressed), 12):
-                chunk = compressed[i:i + 12]
+                chunk = compressed[i : i + 12]
                 array_lines.append(", ".join(f"0x{b:02x}" for b in chunk))
 
             array_content = ",\n    ".join(array_lines)
@@ -100,9 +107,7 @@ def build_frontend(source, target, env):
             lines.append(
                 f"const uint8_t {var_name}[] PROGMEM = {{\n    {array_content}\n}};"
             )
-            lines.append(
-                f"const size_t {var_name}_len = sizeof({var_name});\n"
-            )
+            lines.append(f"const size_t {var_name}_len = sizeof({var_name});\n")
 
             if rel_path == "index.html":
                 append_route("", mime, var_name)
@@ -118,4 +123,5 @@ def build_frontend(source, target, env):
 
     print(f"[frontend] generated {OUTPUT_PATH}")
 
-env.AddPreAction("$BUILD_DIR/${PROGNAME}.elf", build_frontend)
+
+build_frontend()

@@ -3,8 +3,8 @@
 
 // Hardware
 #define NUM_LEDS 119
-#define SWITCH_PIN D2
-#define DATA_PIN D1
+#define SWITCH_PIN 4
+#define DATA_PIN 5
 
 // Wi-Fi
 #define WIFI_IP 192, 168, 0, 123
