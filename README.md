@@ -81,6 +81,7 @@ console.log("Current brightness:", brightnessCmd.result()); // 255
 ### PCB
 
 <img src="misc/pcb.jpg" width="300"/>
+<img src="misc/pcb2.jpg" width="300"/>
 
 ## Usage
 
